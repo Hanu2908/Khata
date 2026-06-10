@@ -1,0 +1,110 @@
+@import "tailwindcss";
+
+/* ============================================
+   Yaari Khaatha — Mocha Premium Design Tokens
+   ============================================ */
+
+@theme {
+  /* Surfaces */
+  --color-bg:             #F3EDE6;
+  --color-card:           #FEFCF9;
+  --color-hero:           #1A1613;
+
+  /* Brand */
+  --color-accent:         #C4470A;
+  --color-positive:       #167A33;
+
+  /* Text */
+  --color-text-primary:   #1A1613;
+  --color-text-secondary: #6D5F51;
+  --color-text-tertiary:  #A49484;
+  --color-text-on-hero:   #FEFCF9;
+  --color-text-on-accent: #FFFFFF;
+
+  /* Borders */
+  --color-border:         #DDD5CA;
+  --color-divider:        #EBE4DB;
+
+  /* Feedback */
+  --color-error:          #B91C1C;
+  --color-success:        #167A33;
+
+  /* Avatar */
+  --color-avatar-bg:      #2C241C;
+  --color-avatar-text:    #FEFCF9;
+
+  /* Shadows — warm-toned */
+  --shadow-card: 0 2px 8px rgba(26, 22, 19, 0.07),
+                 0 1px 2px rgba(26, 22, 19, 0.04);
+  --shadow-cta:  0 4px 14px rgba(196, 71, 10, 0.35);
+
+  /* Typography */
+  --font-sans: 'DM Sans', sans-serif;
+
+  /* Border radius */
+  --radius-card:   14px;
+  --radius-hero:   16px;
+  --radius-cta:    13px;
+  --radius-avatar: 50%;
+  --radius-chip:   8px;
+}
+
+/* Dark mode — manual toggle via .dark class on <html> */
+.dark {
+  --color-bg:             #12100D;
+  --color-card:           #1D1915;
+  --color-hero:           #FEFCF9;
+  --color-accent:         #E05A1A;
+  --color-positive:       #3BD870;
+  --color-text-primary:   #EDE8E0;
+  --color-text-secondary: #968778;
+  --color-text-tertiary:  #584E44;
+  --color-text-on-hero:   #1A1613;
+  --color-text-on-accent: #FFFFFF;
+  --color-border:         #2A241E;
+  --color-divider:        #201C18;
+  --color-error:          #EF4444;
+  --color-success:        #3BD870;
+  --color-avatar-bg:      #2C241C;
+  --color-avatar-text:    #FEFCF9;
+}
+
+/* ============================================
+   Base Styles
+   ============================================ */
+
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    background-color: var(--color-bg);
+    color: var(--color-text-primary);
+    min-height: 100dvh;
+  }
+
+  /* Prevent iOS auto-zoom on input focus */
+  input, select, textarea {
+    font-size: 16px;
+  }
+}
+
+/* FAB Pulse Animation */
+@keyframes fab-pulse {
+  0% {
+    box-shadow: 0 4px 14px rgba(196, 71, 10, 0.35), 0 0 0 0 rgba(196, 71, 10, 0.6);
+  }
+  70% {
+    box-shadow: 0 4px 14px rgba(196, 71, 10, 0.35), 0 0 0 10px rgba(196, 71, 10, 0);
+  }
+  100% {
+    box-shadow: 0 4px 14px rgba(196, 71, 10, 0.35), 0 0 0 0 rgba(196, 71, 10, 0);
+  }
+}
+
+.animate-fab-pulse {
+  animation: fab-pulse 2s infinite;
+}
