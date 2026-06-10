@@ -3,15 +3,20 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
-import { Sparkles, User, CreditCard } from 'lucide-react'
+import { Sparkles, User, CreditCard, Phone } from 'lucide-react'
 
 export default function Onboarding() {
   const navigate = useNavigate()
   const [name, setName] = useState('')
   const [upiId, setUpiId] = useState('')
+  const [phone, setPhone] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [isUpdating, setIsUpdating] = useState(false)
   const [error, setError] = useState('')
+
+  const splitEmail = (email: string) => {
+    return email.split('@')[0]
+  }
 
   useEffect(() => {
     async function fetchProfile() {
@@ -22,7 +27,7 @@ export default function Onboarding() {
           return
         }
 
-        // Check if profile exists and prefill name
+        // Check if profile exists and prefill
         const { data: profile } = await supabase
           .from('profiles')
           .select('*')
@@ -32,6 +37,7 @@ export default function Onboarding() {
         if (profile) {
           setName(profile.name || '')
           setUpiId(profile.upi_id || '')
+          setPhone(profile.phone || '')
         } else {
           // Fallback to Google metadata if no profile row was inserted yet
           const fullName = user.user_metadata?.full_name || splitEmail(user.email || '')
@@ -47,10 +53,6 @@ export default function Onboarding() {
     fetchProfile()
   }, [navigate])
 
-  const splitEmail = (email: string) => {
-    return email.split('@')[0]
-  }
-
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!name.trim()) {
@@ -65,16 +67,18 @@ export default function Onboarding() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Not authenticated')
 
-      // Upsert profile
+      // Upsert profile and mark onboarded = true
       const { error: upsertError } = await supabase.from('profiles').upsert({
         id: user.id,
         name: name.trim(),
         upi_id: upiId.trim() || null,
+        phone: phone.trim() || null,
+        onboarded: true,
       })
 
       if (upsertError) throw upsertError
 
-      navigate('/')
+      navigate('/home')
     } catch (err: any) {
       setError(err.message || 'Failed to save profile')
     } finally {
@@ -82,16 +86,40 @@ export default function Onboarding() {
     }
   }
 
-  const handleSkip = () => {
-    navigate('/')
+  const handleSkip = async () => {
+    setIsUpdating(true)
+    setError('')
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Not authenticated')
+
+      const finalName = name.trim() || user.user_metadata?.full_name || splitEmail(user.email || 'User')
+
+      // Mark onboarded = true even on skip, so the user can navigate to the app
+      const { error: upsertError } = await supabase.from('profiles').upsert({
+        id: user.id,
+        name: finalName,
+        upi_id: upiId.trim() || null,
+        phone: phone.trim() || null,
+        onboarded: true,
+      })
+
+      if (upsertError) throw upsertError
+
+      navigate('/home')
+    } catch (err: any) {
+      setError(err.message || 'Failed to skip onboarding')
+    } finally {
+      setIsUpdating(false)
+    }
   }
 
   if (isLoading) {
     return (
       <div className="min-h-dvh bg-bg flex items-center justify-center">
         <div className="animate-pulse flex flex-col items-center gap-2">
-          <div className="w-10 h-10 bg-accent rounded-full" />
-          <span className="text-xs text-text-secondary font-medium">Loading profile...</span>
+          <div className="w-10 h-10 bg-accent rounded-full animate-bounce" />
+          <span className="text-xs text-text-secondary font-medium font-sans">Loading profile...</span>
         </div>
       </div>
     )
@@ -142,8 +170,18 @@ export default function Onboarding() {
             helperText="Used on share links so friends can pay you instantly."
           />
 
+          <Input
+            label="Your Phone Number (Optional)"
+            type="tel"
+            placeholder="+91 98765 43210"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            prefixIcon={<Phone className="w-4.5 h-4.5" />}
+            helperText="Used for WhatsApp sharing and contact matching."
+          />
+
           <div className="flex flex-col gap-2.5 mt-4">
-            <Button type="submit" variant="primary" fullWidth isLoading={isUpdating}>
+            <Button type="submit" variant="primary" fullWidth isLoading={isUpdating} className="cursor-pointer">
               Get Started
             </Button>
             <Button
@@ -152,6 +190,7 @@ export default function Onboarding() {
               fullWidth
               onClick={handleSkip}
               disabled={isUpdating}
+              className="cursor-pointer"
             >
               Skip for now
             </Button>

@@ -2,6 +2,8 @@ import React, { useState } from 'react'
 import { PageWrapper } from '@/components/layout/PageWrapper'
 import { useGroups, useCreateGroup, useDeleteGroup } from '@/hooks/useGroups'
 import { usePersons } from '@/hooks/usePersons'
+import { useTransactionPersons } from '@/hooks/useTransactions'
+import { formatCurrency } from '@/lib/balance'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { BottomSheet } from '@/components/ui/BottomSheet'
@@ -12,6 +14,7 @@ import { Users, Plus, Trash2, AlertCircle, Sparkles } from 'lucide-react'
 export default function Groups() {
   const { data: groups, isLoading: isGroupsLoading } = useGroups()
   const { data: persons } = usePersons()
+  const { data: txPersons, isLoading: isTxPersonsLoading } = useTransactionPersons()
   
   const createGroupMutation = useCreateGroup()
   const deleteGroupMutation = useDeleteGroup()
@@ -54,6 +57,22 @@ export default function Groups() {
     }
   }
 
+  const computeGroupBalance = (groupId: string) => {
+    if (!txPersons) return 0
+    return txPersons
+      .filter((tp) => tp.transactions?.group_id === groupId)
+      .reduce((sum, tp) => {
+        if (tp.direction === 'owes_me') {
+          return sum + tp.share_amount_paise
+        } else if (tp.direction === 'i_owe') {
+          return sum - tp.share_amount_paise
+        }
+        return sum
+      }, 0)
+  }
+
+  const isLoading = isGroupsLoading || isTxPersonsLoading
+
   return (
     <PageWrapper
       title="Groups"
@@ -92,7 +111,7 @@ export default function Groups() {
             Your Groups
           </h3>
 
-          {isGroupsLoading ? (
+          {isLoading ? (
             Array.from({ length: 3 }).map((_, i) => (
               <div key={i} className="w-full h-24 bg-card border border-divider animate-pulse rounded-card" />
             ))
@@ -103,6 +122,8 @@ export default function Groups() {
                 .map((m) => m ? (m.label || m.name) : '')
                 .filter(Boolean)
                 .join(', ')
+
+              const groupBalance = computeGroupBalance(group.id)
 
               return (
                 <div
@@ -117,6 +138,15 @@ export default function Groups() {
                       {members.length > 0
                         ? `${members.length} member${members.length > 1 ? 's' : ''}: ${memberNames}`
                         : 'No members added yet'}
+                    </span>
+                    <span className={`text-[12px] font-semibold mt-1 font-sans ${
+                      groupBalance > 0 ? 'text-positive' : groupBalance < 0 ? 'text-negative' : 'text-text-tertiary'
+                    }`}>
+                      {groupBalance > 0 
+                        ? `You are owed ${formatCurrency(groupBalance)}` 
+                        : groupBalance < 0 
+                        ? `You owe ${formatCurrency(Math.abs(groupBalance))}` 
+                        : 'Settled up'}
                     </span>
                   </div>
 

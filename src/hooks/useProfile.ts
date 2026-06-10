@@ -5,6 +5,7 @@ export interface Profile {
   id: string
   name: string
   upi_id: string | null
+  onboarded: boolean
   created_at: string
 }
 

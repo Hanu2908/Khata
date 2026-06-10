@@ -1,11 +1,17 @@
 -- Yaari Khaatha Database Schema
--- Version: 1.1 (Secure RPC Update)
+-- Version: 1.2 (Auth & Onboarding Update)
+
+-- MIGRATION: Run this if profiles table already exists:
+-- ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS phone text;
+-- ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS onboarded boolean DEFAULT false NOT NULL;
 
 -- 1. Profiles (linked to auth.users)
 create table public.profiles (
   id uuid references auth.users on delete cascade primary key,
   name text not null,
   upi_id text,
+  phone text,
+  onboarded boolean default false not null,
   created_at timestamptz default now()
 );
 
@@ -151,11 +157,13 @@ create index idx_share_tokens_token on public.share_tokens(token);
 create or replace function public.handle_new_user()
 returns trigger as $$
 begin
-  insert into public.profiles (id, name, upi_id)
+  insert into public.profiles (id, name, upi_id, phone, onboarded)
   values (
     new.id,
     coalesce(new.raw_user_meta_data->>'full_name', split_part(new.email, '@', 1)),
-    null
+    null,
+    null,
+    false
   );
   return new;
 end;
@@ -241,6 +249,7 @@ begin
     'ownerName', owner_profile.name,
     'ownerUpi', owner_profile.upi_id,
     'friendRealName', person_row.name,
+    'expiresAt', token_row.expires_at,
     'history_transactions', tx_persons_json,
     'history_settlements', settlements_json
   );

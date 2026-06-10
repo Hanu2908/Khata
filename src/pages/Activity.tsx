@@ -2,6 +2,7 @@ import React from 'react'
 import { PageWrapper } from '@/components/layout/PageWrapper'
 import { useActivity } from '@/hooks/useActivity'
 import { ActivityItem } from '@/components/ledger/ActivityItem'
+import { DateGroupHeader } from '@/components/ledger/DateGroupHeader'
 import { ActivityEmptyIllustration } from '@/components/ui/illustrations/ActivityEmptyIllustration'
 import { AlertCircle, RefreshCw } from 'lucide-react'
 
@@ -37,9 +38,19 @@ export default function Activity() {
           </div>
         ) : timeline && timeline.length > 0 ? (
           <div className="flex flex-col gap-3">
-            {timeline.map((item) => (
-              <ActivityItem key={item.id} item={item} />
-            ))}
+            {(() => {
+              let lastDate = ''
+              return timeline.map((item) => {
+                const showHeader = item.date !== lastDate
+                lastDate = item.date
+                return (
+                  <React.Fragment key={item.id}>
+                    {showHeader && <DateGroupHeader dateString={item.date} />}
+                    <ActivityItem item={item} />
+                  </React.Fragment>
+                )
+              })
+            })()}
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center p-8 bg-card border border-divider rounded-card text-center gap-4 font-sans select-none shadow-card">

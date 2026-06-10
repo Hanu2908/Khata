@@ -161,8 +161,30 @@ export function usePersonLedger(personId: string) {
         direction: s.direction,
       }))
 
-    // Combine and sort by date descending, then created_at descending
-    const history = [...txs, ...sets].sort((a, b) => {
+    // Combine and sort by date ascending, then created_at ascending for chronological calculation
+    const chronological = [...txs, ...sets].sort((a, b) => {
+      const dateCompare = a.date.localeCompare(b.date)
+      if (dateCompare !== 0) return dateCompare
+      return a.created_at.localeCompare(b.created_at)
+    })
+
+    // Compute running balance at each point in time
+    let sum = 0
+    const historyWithBalances = chronological.map((item) => {
+      const isTx = item.type === 'transaction'
+      if (isTx) {
+        sum += item.direction === 'owes_me' ? item.amount_paise : -item.amount_paise
+      } else {
+        sum += item.direction === 'i_paid' ? item.amount_paise : -item.amount_paise
+      }
+      return {
+        ...item,
+        runningBalance: sum,
+      }
+    })
+
+    // Sort by date descending, then created_at descending (newest first for UI rendering)
+    const history = historyWithBalances.sort((a, b) => {
       const dateCompare = b.date.localeCompare(a.date)
       if (dateCompare !== 0) return dateCompare
       return b.created_at.localeCompare(a.created_at)

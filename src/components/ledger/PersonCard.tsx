@@ -10,6 +10,8 @@ interface PersonCardProps {
   label: string | null
   netBalancePaise: number
   direction: BalanceDirection
+  onClick?: (e: React.MouseEvent) => void
+  isActive?: boolean
 }
 
 export const PersonCard: React.FC<PersonCardProps> = ({
@@ -18,6 +20,8 @@ export const PersonCard: React.FC<PersonCardProps> = ({
   label,
   netBalancePaise,
   direction,
+  onClick,
+  isActive = false,
 }) => {
   const displayName = label || name
   const hasLabel = !!label
@@ -42,7 +46,10 @@ export const PersonCard: React.FC<PersonCardProps> = ({
   return (
     <Link
       to={`/person/${personId}`}
-      className="flex items-center justify-between p-4 bg-card border border-divider hover:border-border rounded-card shadow-card transition-all duration-200 active:scale-[0.99] select-none"
+      onClick={onClick}
+      className={`flex items-center justify-between p-4 bg-card border rounded-card shadow-card transition-all duration-200 active:scale-[0.99] select-none ${
+        isActive ? 'border-accent bg-accent/5' : 'border-divider hover:border-border'
+      }`}
     >
       <div className="flex items-center gap-3.5">
         <Avatar name={name} size="md" />

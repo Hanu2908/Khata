@@ -7,6 +7,7 @@ PWA for Indian college students — track informal give-take transactions with f
 **Value prop:** See who owes you what instantly. Friends don't need app.
 **Differentiator:** Shareable summary link via WhatsApp — read-only ledger + UPI deep-link + QR to pay.
 **Pitch:** "Log who owes you in 3 taps. Share pay link on WhatsApp. They don't need app."
+**Landing page:** Public marketing page at `/`. Converts visitors → signups. Sections: Hero, App Preview, How It Works, Why Yaari Khaatha, Footer.
 
 ## Target User
 Indian college students 18–23. UPI-native, cash too. Daily shared expenses (food, auto, chai). Won't install apps for friends.
@@ -85,7 +86,7 @@ function equalSplit(totalPaise: number, numPeople: number): number[] {
 ### 4. Logging speed < 3 taps / 10 seconds
 ### 5. Tone = friendly, never formal ("owes you" not "debt")
 ### 6. No payment processing — UPI deep-link + QR only
-### 7. Accent color = CTA + negative amounts only
+### 7. Accent color = CTA only (negative amounts use --color-negative)
 ### 8. Supabase client = singleton (`@/lib/supabase`)
 
 ### 9. Person Identity & Duplicate Management
@@ -99,9 +100,9 @@ function equalSplit(totalPaise: number, numPeople: number): number[] {
 ### Light Mode
 ```css
 --color-bg: #F3EDE6; --color-card: #FEFCF9; --color-hero: #1A1613;
---color-accent: #C4470A; --color-positive: #167A33;
+--color-accent: #C4470A; --color-positive: #167A33; --color-negative: #9B4040;
 --color-text-primary: #1A1613; --color-text-secondary: #6D5F51;
---color-text-tertiary: #A49484; --color-text-on-hero: #FEFCF9;
+--color-text-tertiary: #76695B; --color-text-on-hero: #FEFCF9;
 --color-border: #DDD5CA; --color-divider: #EBE4DB;
 --color-error: #B91C1C; --color-success: #167A33;
 --color-avatar-bg: #2C241C; --color-avatar-text: #FEFCF9;
@@ -110,9 +111,9 @@ function equalSplit(totalPaise: number, numPeople: number): number[] {
 ### Dark Mode
 ```css
 --color-bg: #12100D; --color-card: #1D1915; --color-hero: #FEFCF9;
---color-accent: #E05A1A; --color-positive: #3BD870;
+--color-accent: #E05A1A; --color-positive: #3BD870; --color-negative: #E05C5C;
 --color-text-primary: #EDE8E0; --color-text-secondary: #968778;
---color-text-tertiary: #584E44; --color-text-on-hero: #1A1613;
+--color-text-tertiary: #968778; --color-text-on-hero: #1A1613;
 --color-border: #2A241E; --color-divider: #201C18;
 --color-error: #EF4444; --color-success: #3BD870;
 --color-avatar-bg: #2C241C; --color-avatar-text: #FEFCF9;
@@ -132,10 +133,29 @@ function equalSplit(totalPaise: number, numPeople: number): number[] {
 Min text: 12px. Primary interactive: 16px.
 
 ## Nav
+
+### Mobile + Tablet (`< 1024px`) — Bottom Nav
 ```
 [ 🏠 Home ] [ 👥 Groups ] [ ➕ FAB ] [ 📋 Activity ] [ ⚙️ Settings ]
 ```
-Person detail = drill-down from Home.
+
+### Desktop (`≥ 1024px`) — Left Sidebar (240px)
+```
+┌──────────────────────┐
+│  🟠 Yaari Khaatha    │
+├──────────────────────┤
+│  🏠  Home            │
+│  👥  Groups          │
+│  📋  Activity        │
+│  ⚙️  Settings        │
+├──────────────────────┤
+│  [ + New Transaction]│  ← accent button, replaces FAB
+├──────────────────────┤
+│  [avatar]  Name      │  ← user profile, bottom (X.com style)
+└──────────────────────┘
+```
+
+Person detail on desktop = two-column (person list left, ledger right). Mobile = full-page drill-down.
 
 ## Conventions
 - Functional components + hooks
@@ -145,8 +165,39 @@ Person detail = drill-down from Home.
 - All Supabase calls in try/catch, skeleton loaders
 - Money = paise, always `formatCurrency()`
 
+## Responsive Design
+Mobile-first. Most users on phones. But app is fully responsive across all screen sizes.
+
+| Breakpoint | Layout |
+|------------|--------|
+| `< 640px` | Bottom nav, FAB, full-width cards |
+| `640–1023px` | Bottom nav, max-w-600px centered |
+| `≥ 1024px` | Left sidebar 240px + main content max-w-800px |
+
+**Key rules:**
+- `AppLayout.tsx` = single responsive shell for all app pages. Sidebar on `lg:`, bottom nav on `<lg`.
+- `PageWrapper.tsx` = `max-w-[800px] mx-auto` for all content.
+- Landing page has own layout (not `AppLayout`). Max-w-1200px.
+- Bottom sheets → centered modals on `lg+`. Same component, responsive CSS.
+- No separate mobile/desktop page components. Use `lg:` Tailwind prefixes.
+- `pb-24` on mobile (bottom nav clearance), `pb-6` on desktop.
+
 ## V1 Excludes
 Custom splits, offline sync, rate limiting, custom domain, monetization arch, NLP input, push notifs, categories, mutual ledger, analytics, payment processing, app store.
+
+## Routes
+| Route | Page | Auth |
+|-------|------|------|
+| `/` | Landing.tsx | Public. Redirect to `/home` if session. |
+| `/login` | Login.tsx | Public |
+| `/onboarding` | Onboarding.tsx | Protected (session required, profile incomplete) |
+| `/home` | Home.tsx | Protected |
+| `/groups` | Groups.tsx | Protected |
+| `/activity` | Activity.tsx | Protected |
+| `/person/:id` | Person.tsx | Protected |
+| `/add` | AddTransaction.tsx | Protected |
+| `/settings` | Settings.tsx | Protected |
+| `/s/[token]` | Share.tsx | Public (no auth) |
 
 ## Decisions
 | # | Decision | Resolution |
@@ -165,6 +216,12 @@ Custom splits, offline sync, rate limiting, custom domain, monetization arch, NL
 | 12 | Nav | 4 tabs + FAB |
 | 13 | Styling | Tailwind v4 |
 | 14 | Splits | Equal only V1 |
+| 15 | Landing page | `/` route, 5 sections, dual CTA hero |
+| 16 | Responsive | Mobile-first. `<640` bottom nav, `≥1024` left sidebar |
+| 17 | Desktop nav | Left sidebar 240px, user profile at bottom |
+| 18 | Desktop content width | max-w-[800px] centered |
+| 19 | Person detail desktop | Two-column layout |
+| 20 | Bottom sheets desktop | Centered modal via responsive CSS, same component |
 
 ## Session Checklist
 1. Building Yaari Khaatha — social khata PWA

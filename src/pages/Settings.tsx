@@ -180,7 +180,7 @@ export default function Settings() {
             >
               <Coffee className="w-5 h-5 text-positive" />
               <div>
-                <h4 className="text-sm font-semibold text-text-primary">Buy me a chai ☕</h4>
+                <h4 className="text-sm font-semibold text-text-primary">Buy me a chai</h4>
                 <p className="text-xs text-text-secondary mt-0.5">Support first-year student builders</p>
               </div>
             </a>

@@ -10,24 +10,23 @@
   --color-card:           #FEFCF9;
   --color-hero:           #1A1613;
 
-  /* Brand */
+  /* Brand & Feedback */
   --color-accent:         #C4470A;
   --color-positive:       #167A33;
+  --color-negative:       #9B4040; /* Muted steel-red/rose for negative/debt */
+  --color-error:          #B91C1C;
+  --color-success:        #167A33;
 
   /* Text */
   --color-text-primary:   #1A1613;
   --color-text-secondary: #6D5F51;
-  --color-text-tertiary:  #A49484;
+  --color-text-tertiary:  #76695B; /* Shifted to pass WCAG AA (>4.5:1) */
   --color-text-on-hero:   #FEFCF9;
   --color-text-on-accent: #FFFFFF;
 
   /* Borders */
   --color-border:         #DDD5CA;
   --color-divider:        #EBE4DB;
-
-  /* Feedback */
-  --color-error:          #B91C1C;
-  --color-success:        #167A33;
 
   /* Avatar */
   --color-avatar-bg:      #2C241C;
@@ -56,15 +55,16 @@
   --color-hero:           #FEFCF9;
   --color-accent:         #E05A1A;
   --color-positive:       #3BD870;
+  --color-negative:       #E05C5C; /* Muted steel-red/rose for negative/debt */
+  --color-error:          #EF4444;
+  --color-success:        #3BD870;
   --color-text-primary:   #EDE8E0;
   --color-text-secondary: #968778;
-  --color-text-tertiary:  #584E44;
+  --color-text-tertiary:  #968778; /* Shifted to pass WCAG AA (>4.5:1) */
   --color-text-on-hero:   #1A1613;
   --color-text-on-accent: #FFFFFF;
   --color-border:         #2A241E;
   --color-divider:        #201C18;
-  --color-error:          #EF4444;
-  --color-success:        #3BD870;
   --color-avatar-bg:      #2C241C;
   --color-avatar-text:    #FEFCF9;
 }

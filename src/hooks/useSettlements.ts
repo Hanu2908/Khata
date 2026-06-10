@@ -139,3 +139,107 @@ export function useCreateSettlement() {
     },
   })
 }
+
+export function useDeleteSettlement() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('settlements').delete().eq('id', id)
+      if (error) throw error
+      return id
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['settlements'] })
+      queryClient.invalidateQueries({ queryKey: ['transactions'] })
+      queryClient.invalidateQueries({ queryKey: ['transaction_persons_all'] })
+      queryClient.invalidateQueries({ queryKey: ['activity'] })
+      queryClient.invalidateQueries({ queryKey: ['persons'] })
+    },
+  })
+}
+
+export interface UpdateSettlementParams {
+  id: string
+  person_id: string
+  amount_paise: number
+  direction: 'i_paid' | 'they_paid'
+  method: 'cash' | 'upi' | 'other'
+  note?: string | null
+  date: string
+}
+
+export function useUpdateSettlement() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (params: UpdateSettlementParams) => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Not authenticated')
+
+      // 1. Update the settlement
+      const { data: settlement, error: sError } = await supabase
+        .from('settlements')
+        .update({
+          amount_paise: params.amount_paise,
+          direction: params.direction,
+          method: params.method,
+          note: params.note || null,
+          date: params.date,
+        })
+        .eq('id', params.id)
+        .select()
+        .single()
+
+      if (sError) throw sError
+
+      // 2. Recompute net balance and update is_settled status
+      const { data: txPersons, error: txError } = await supabase
+        .from('transaction_persons')
+        .select(`
+          direction,
+          share_amount_paise,
+          transactions!inner (user_id)
+        `)
+        .eq('person_id', params.person_id)
+        .eq('transactions.user_id', user.id)
+
+      if (txError) throw txError
+
+      const { data: settlements, error: setError } = await supabase
+        .from('settlements')
+        .select('amount_paise, direction')
+        .eq('person_id', params.person_id)
+        .eq('user_id', user.id)
+
+      if (setError) throw setError
+
+      const netBalance = getNetBalance(
+        txPersons.map(tp => ({
+          direction: tp.direction as 'owes_me' | 'i_owe',
+          share_amount_paise: tp.share_amount_paise
+        })),
+        settlements
+      )
+
+      const isSettled = netBalance === 0
+
+      const { error: updateError } = await supabase
+        .from('transaction_persons')
+        .update({ is_settled: isSettled })
+        .eq('person_id', params.person_id)
+
+      if (updateError) {
+        console.error('Error updating is_settled flag:', updateError)
+      }
+
+      return settlement
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['settlements'] })
+      queryClient.invalidateQueries({ queryKey: ['transactions'] })
+      queryClient.invalidateQueries({ queryKey: ['transaction_persons_all'] })
+      queryClient.invalidateQueries({ queryKey: ['activity'] })
+      queryClient.invalidateQueries({ queryKey: ['persons'] })
+    },
+  })
+}
+

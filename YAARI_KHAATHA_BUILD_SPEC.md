@@ -1,5 +1,5 @@
 # Yaari Khaatha — Master Build Spec
-**Version:** 1.1 — Transaction management + person detail page locked
+**Version:** 1.2 — Landing page + responsive design system locked
 **Author:** Himanshu Saini
 **Status:** Ready to build
 **Last updated:** June 2026
@@ -12,6 +12,7 @@
 |---------|--------|
 | 1.0 | Initial grill-locked spec |
 | 1.1 | Added Section 24: Person detail page layout, pinned action buttons, ledger row anatomy, transaction details bottom sheet, edit flow, delete flow. Decisions #29–40 logged. |
+| 1.2 | Added Section 25: Landing page spec (route, sections, CTAs). Added Section 26: Responsive design system (breakpoints, AppLayout, desktop sidebar, two-column person detail). Updated Section 13: Nav (desktop sidebar anatomy). Updated Section 17: File structure. Auth milestone routes locked. Decisions #41–48 logged. |
 
 ---
 
@@ -822,17 +823,46 @@ if (duplicate) {
 
 ## 13. Navigation
 
+### Mobile + Tablet (`< 1024px`) — Bottom Nav
+
 ```
 [ 🏠 Home ] [ 👥 Groups ] [ ➕ FAB ] [ 📋 Activity ] [ ⚙️ Settings ]
 ```
 
-- **Home** — Hero card (total owed to me + I owe) + active person list sorted by abs(balance) desc + collapsed settled section
+- **Home** — Hero card + active person list sorted by abs(balance) desc + collapsed settled section
 - **Groups** — Create/manage groups, view group splits
-- **FAB (center, raised)** — Log transaction (primary action). Opens bottom sheet: Direct IOU | Group Split
+- **FAB (center, raised)** — Log transaction. Opens bottom sheet: Direct IOU | Group Split
 - **Activity** — Unified timeline of transactions + settlements across all persons
 - **Settings** — Profile (name, UPI ID), dark mode toggle, "Buy me a chai ☕"
 
-Person detail = drill-down from Home (tap person card). NOT a nav tab.
+Person detail = full-page drill-down from Home (tap person card). NOT a nav tab.
+
+### Desktop (`≥ 1024px`) — Left Sidebar (240px fixed)
+
+```
+┌──────────────────────┐
+│  🟠 Yaari Khaatha    │  ← logo + app name (top)
+├──────────────────────┤
+│  🏠  Home            │
+│  👥  Groups          │
+│  📋  Activity        │
+│  ⚙️  Settings        │
+├──────────────────────┤
+│                      │
+│  ┌──────────────┐    │
+│  │ + New        │    │  ← accent button (--color-accent), replaces FAB
+│  │ Transaction  │    │
+│  └──────────────┘    │
+│                      │
+├──────────────────────┤
+│  [avatar] Name       │  ← user profile at bottom (X.com style)
+└──────────────────────┘
+```
+
+- **Active nav item** — `--color-accent` left border + slightly elevated bg
+- **"+ New Transaction" button** — full-width, `--color-accent`, `--radius-cta`. Same action as FAB.
+- **User profile row** — avatar + display name. Taps → Settings page.
+- Person detail on desktop = **two-column layout** (see Section 26.4).
 
 ---
 
@@ -920,24 +950,36 @@ No offline queue. No localStorage sync. No conflict resolution. V1.1 feature.
 │   ├── components/
 │   │   ├── ui/                     ← Button, Input, BottomSheet, Avatar, Chip, Toast, Modal
 │   │   │   └── ConfirmModal.tsx    ← Reusable delete confirmation modal
-│   │   ├── layout/                 ← BottomNav, FAB, PageWrapper
+│   │   ├── layout/
+│   │   │   ├── AppLayout.tsx       ← Root app layout: sidebar (lg+) vs bottom nav (<lg)
+│   │   │   ├── Sidebar.tsx         ← Desktop sidebar 240px fixed (lg+)
+│   │   │   ├── BottomNav.tsx       ← Mobile/tablet bottom nav (<lg)
+│   │   │   ├── FAB.tsx             ← Mobile FAB (hidden on person detail page)
+│   │   │   └── PageWrapper.tsx     ← Content max-w-[800px] centered + padding
 │   │   ├── ledger/                 ← PersonCard, TransactionItem, BalanceBadge, HeroCard, ActivityItem
 │   │   │   ├── LedgerRow.tsx       ← Single transaction/settlement row (date-grouped)
 │   │   │   └── TransactionDetailSheet.tsx  ← Bottom sheet: details + ··· menu
 │   │   ├── forms/                  ← AddTransaction, GroupSplit, LogSettlement, AddPerson
-│   │   └── share/                  ← ShareableSummary (public, no auth)
+│   │   ├── share/                  ← ShareableSummary (public, no auth)
+│   │   └── landing/                ← Landing page sections
+│   │       ├── LandingHero.tsx     ← Headline + dual CTA
+│   │       ├── HowItWorks.tsx      ← 3-step: Log → Share → Settle
+│   │       ├── WhyYaariKhaatha.tsx ← 3–4 differentiators
+│   │       ├── AppPreview.tsx      ← Static mockup of app UI
+│   │       └── LandingFooter.tsx   ← Tagline + links
 │   ├── pages/
-│   │   ├── Home.tsx                ← HeroCard + person list
-│   │   ├── Groups.tsx              ← Group management
-│   │   ├── Activity.tsx            ← Unified transaction+settlement timeline
-│   │   ├── Person.tsx              ← Per-person ledger + pinned buttons (see Section 24)
-│   │   ├── AddTransaction.tsx      ← Transaction logging + edit flow (transactionId prop = edit mode)
-│   │   ├── Share.tsx               ← Public shareable summary (no auth, /s/[token])
-│   │   ├── Settings.tsx            ← Profile, UPI ID, dark mode, buy coffee
-│   │   ├── Login.tsx               ← Email/pass + Google OAuth
-│   │   └── Onboarding.tsx          ← First-time profile setup
+│   │   ├── Landing.tsx             ← Public marketing page (route: /)
+│   │   ├── Login.tsx               ← Email/pass + Google OAuth (route: /login)
+│   │   ├── Onboarding.tsx          ← First-time profile setup (route: /onboarding)
+│   │   ├── Home.tsx                ← HeroCard + person list (route: /home)
+│   │   ├── Groups.tsx              ← Group management (route: /groups)
+│   │   ├── Activity.tsx            ← Unified timeline (route: /activity)
+│   │   ├── Person.tsx              ← Per-person ledger (route: /person/:id)
+│   │   ├── AddTransaction.tsx      ← Transaction logging + edit (route: /add)
+│   │   ├── Share.tsx               ← Public share summary (route: /s/[token])
+│   │   └── Settings.tsx            ← Profile, dark mode, buy coffee (route: /settings)
 │   ├── store/
-│   │   └── useUIStore.ts           ← Zustand: dark mode, toast, bottom sheet state
+│   │   └── useUIStore.ts           ← Zustand: dark mode, toast, bottom sheet, showSettled, fabPulsed
 │   ├── lib/
 │   │   ├── supabase.ts             ← Supabase client singleton
 │   │   ├── balance.ts              ← UNIT TESTED. Single source of truth.
@@ -950,12 +992,12 @@ No offline queue. No localStorage sync. No conflict resolution. V1.1 feature.
 │   │   ├── useBalance.ts           ← Derived: getNetBalance per person, home totals, running balance
 │   │   ├── useActivity.ts          ← Merged + sorted activity feed
 │   │   └── useShare.ts             ← Share token create/delete
-│   ├── App.tsx
+│   ├── App.tsx                     ← Route definitions + auth guard
 │   └── main.tsx
 ├── supabase/
 │   ├── schema.sql                  ← Full schema (sections 3.1–3.7 above)
 │   └── functions/
-│       └── notify-owner/           ← Edge function: send email on "Something looks wrong?"
+│       └── notify-owner/           ← Edge function: email on "Something looks wrong?"
 │           └── index.ts
 ├── .env.example
 ├── vite.config.ts
@@ -1248,3 +1290,212 @@ For Group Split entries, additional note in modal body:
 | 38 | Ledger row design | Date-grouped section headers ("3 Jun 2026 · Today"). Colored dot icon. Note + amount on primary line. Context on secondary line. No running balance in row — lives in details sheet only. |
 | 39 | Edit component reuse | AddTransaction.tsx accepts optional `transactionId` prop (edit mode). LogSettlement accepts optional `settlementId` prop. No separate edit components. |
 | 40 | Delete confirmation | Separate modal on top of details sheet. Shows entry summary + "This can't be undone." Cancel + Delete (--color-error). On confirm: CASCADE DELETE → queryClient.invalidateQueries → success toast. |
+
+---
+
+## 25. Landing Page Spec
+
+### 25.1 Route & Auth Logic
+
+```
+/         → Landing.tsx (public)
+           → if session exists → redirect to /home
+           → else → render landing page
+
+/login    → Login.tsx (public)
+/onboarding → Onboarding.tsx (protected — only if profile incomplete)
+/home     → app (auth guard — redirect to /login if no session)
+```
+
+`App.tsx` auth guard: check Supabase session on mount. If session + profile complete → `/home`. If session + no profile → `/onboarding`. If no session → `/login`.
+
+### 25.2 Landing Page Sections
+
+**Section 1 — Hero**
+```
+┌─────────────────────────────────────────────┐
+│                                             │
+│   Track who owes you.                       │
+│   Share a pay link. Done.                   │
+│                                             │
+│   Log daily IOUs in 3 taps. Your friend     │
+│   doesn't need the app.                     │
+│                                             │
+│   [ Get Started Free ]  [ See how it works ↓]│
+│     (accent CTA)          (ghost/outline)    │
+│                                             │
+└─────────────────────────────────────────────┘
+```
+- "See how it works ↓" = smooth scroll anchor to Section 3.
+- Hero bg: `--color-bg`. Headline: 40px (mobile: 28px), weight 600, `--color-text-primary`.
+- Subline: 16px, `--color-text-secondary`.
+
+**Section 2 — App Preview**
+- Static screenshot/mockup of the Home screen in Mocha Premium UI.
+- Shows hero card + 2–3 person cards with balances.
+- Mobile frame (phone outline) around screenshot. Centered.
+- On desktop: mockup floats right, copy text left (two-column).
+
+**Section 3 — How It Works**
+3 steps with icons:
+
+| Step | Icon | Heading | Body |
+|------|------|---------|------|
+| 1 | ✏️ | Log in 3 taps | Auto, chai, Dominos — log who paid and move on. |
+| 2 | 📤 | Share a link | Send a clean WhatsApp link. They see exactly what's owed. |
+| 3 | 💸 | Settle via UPI | One tap to pay directly. No app install. No awkwardness. |
+
+Layout: horizontal row on desktop, vertical stack on mobile.
+
+**Section 4 — Why Yaari Khaatha**
+4 differentiator cards:
+
+| # | Heading | Body |
+|---|---------|------|
+| 1 | Friends don't need the app | Share a link. They open it, see the ledger, pay via UPI. |
+| 2 | No paywall | Splitwise limits free users. Yaari Khaatha is free, always. |
+| 3 | UPI-native | Deep-link opens PhonePe, GPay, or Paytm pre-filled. QR for desktop. |
+| 4 | Built for India | Cash and UPI treated equally. Built for hostel wings and friend circles. |
+
+Layout: 2×2 grid on desktop, single column on mobile.
+
+**Section 5 — Footer**
+```
+Yaari Khaatha — Built for Indian college students
+[GitHub] [Privacy] [Contact]
+Made with ☕ by Himanshu
+```
+- Bg: `--color-hero` (dark). Text: `--color-text-on-hero`.
+- Minimal. No newsletter. No socials beyond GitHub.
+
+### 25.3 Landing Page — Responsive Notes
+- Landing page is **not** wrapped in `AppLayout.tsx` — no sidebar, no bottom nav.
+- Has its own nav bar: logo left + "Log In" button right.
+- "Log In" → `/login`.
+- "Get Started Free" → `/login` (signup tab default).
+- Full-width at all breakpoints. Max content width: `1200px` centered.
+
+---
+
+## 26. Responsive Design System
+
+### 26.1 Breakpoints
+
+| Breakpoint | Range | Layout |
+|------------|-------|--------|
+| Mobile | `< 640px` | Bottom nav, full-width cards, FAB center |
+| Tablet | `640px–1023px` | Bottom nav, max-width 600px centered |
+| Desktop | `≥ 1024px` | Left sidebar 240px fixed, main content max-w-[800px] centered |
+
+Tailwind prefix mapping: `sm:` = 640px, `lg:` = 1024px. `md:` (768px) used for tablet-specific tweaks.
+
+### 26.2 AppLayout.tsx — Responsive Shell
+
+```tsx
+// src/components/layout/AppLayout.tsx
+// Renders sidebar on lg+, bottom nav + FAB on <lg
+// Wraps all authenticated app pages (NOT landing, login, onboarding, share)
+
+<div className="flex h-screen">
+  {/* Desktop sidebar */}
+  <aside className="hidden lg:flex flex-col w-60 fixed h-full ...">
+    <Sidebar />
+  </aside>
+
+  {/* Main content area */}
+  <main className="flex-1 lg:ml-60 overflow-y-auto">
+    <PageWrapper>
+      <Outlet />  {/* React Router outlet */}
+    </PageWrapper>
+  </main>
+
+  {/* Mobile/tablet bottom nav */}
+  <nav className="lg:hidden fixed bottom-0 left-0 right-0 ...">
+    <BottomNav />
+  </nav>
+
+  {/* FAB — mobile/tablet only, hidden on person detail page */}
+  <FAB className="lg:hidden" />
+</div>
+```
+
+### 26.3 PageWrapper — Content Width
+
+```tsx
+// src/components/layout/PageWrapper.tsx
+// All app page content goes through this wrapper
+
+<div className="max-w-[800px] mx-auto px-4 py-6 pb-24 lg:pb-6">
+  {children}
+</div>
+// pb-24 on mobile = space for bottom nav + FAB
+// pb-6 on desktop = no bottom nav
+```
+
+### 26.4 Person Detail — Desktop Two-Column Layout
+
+On `lg+`, Person.tsx renders as two-column split within the `PageWrapper`:
+
+```
+┌─────────────────────────────────────────────────┐
+│  ← Back                                         │
+│                                                 │
+│  ┌───────────────────┐  ┌────────────────────┐  │
+│  │ Person List       │  │ Rahul's Ledger     │  │
+│  │ (left, 280px)     │  │ (right, flex-1)    │  │
+│  │                   │  │                    │  │
+│  │ ● Rahul  ₹1,240   │  │ Balance card       │  │
+│  │ ● Priya  ₹480     │  │ Transaction list   │  │
+│  │ ● Ankit  ─────    │  │ Pinned buttons     │  │
+│  └───────────────────┘  └────────────────────┘  │
+└─────────────────────────────────────────────────┘
+```
+
+- Left panel = person list (same as Home person list, 280px, scrollable)
+- Right panel = selected person's ledger (flex-1, scrollable independently)
+- Selecting a person in left panel updates right panel (no navigation)
+- On `< lg` = standard full-page drill-down (existing mobile behaviour unchanged)
+- State: `selectedPersonId` in component state (not Zustand — local to this layout)
+
+### 26.5 Forms + Bottom Sheets on Desktop
+
+Bottom sheets (`BottomSheet.tsx`) on desktop → render as centered modal dialogs instead:
+
+```tsx
+// BottomSheet.tsx — responsive
+// Mobile (<lg): slides up from bottom (existing behaviour)
+// Desktop (lg+): renders as centered modal, max-w-[480px], shadow-xl
+```
+
+Same component, different positioning via responsive CSS. No separate modal component for forms.
+
+### 26.6 Responsive Rules for All Pages
+
+| Page | Mobile | Desktop |
+|------|--------|---------|
+| Home | Full width cards, hero card full-width | Cards max-w-[800px], hero card wider |
+| Groups | Single column list | Single column, max-w-[800px] |
+| Activity | Single column timeline | Single column, max-w-[800px] |
+| Person | Full-page detail | Two-column (see 26.4) |
+| Settings | Single column form | Single column, max-w-[480px] centered |
+| Share (`/s/[token]`) | Full width | Max-w-[600px] centered, no nav |
+| Login | Full width form | Max-w-[400px] centered card |
+| Onboarding | Full width form | Max-w-[480px] centered card |
+| Landing | Full width | Max-w-[1200px], sections adapt |
+
+---
+
+## 27. Closed Decisions Log — continued
+
+| # | Decision | Resolution |
+|---|----------|-----------|
+| 41 | Landing page route | `/` = Landing.tsx. Auth check on mount: session → `/home`. No session → render landing. |
+| 42 | Landing page sections | Hero, App Preview, How It Works, Why Yaari Khaatha, Footer. In that order. |
+| 43 | Landing hero CTAs | "Get Started Free" (accent, → /login signup) + "See how it works ↓" (ghost, scroll anchor). |
+| 44 | Landing nav bar | Logo left + "Log In" right. Not `AppLayout` — standalone. |
+| 45 | Responsive breakpoints | Mobile <640px, Tablet 640–1023px, Desktop ≥1024px. |
+| 46 | Desktop nav | Left sidebar 240px. Tabs → sidebar items. FAB → "New Transaction" button. User profile at bottom (X.com style). |
+| 47 | Desktop main content width | max-w-[800px] centered in content area (sidebar excluded). |
+| 48 | Person detail desktop | Two-column: person list left (280px), ledger right (flex-1). `selectedPersonId` local state. Mobile = full-page drill-down unchanged. |
+| 49 | Bottom sheets on desktop | Same `BottomSheet.tsx` component. lg+: renders as centered modal (max-w-[480px]). No separate component. |
+| 50 | Pages needing remake | None. Tailwind `lg:` prefixes handle layout switching. `AppLayout.tsx` is the single responsive shell. |
